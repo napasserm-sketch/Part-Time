@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Part-Time Shift & Wage System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-muted: #64748b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Prompt', sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 24px 16px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 900px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+    .header p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+    .card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    input, select {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+    }
+    .btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 16px;
+      transition: background-color 0.2s;
+    }
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+    .btn:disabled {
+      background-color: #94a3b8;
+      cursor: not-allowed;
+    }
+    .table-container {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background-color: #f1f5f9;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-normal { background-color: #e0f2fe; color: #0369a1; }
+    .badge-night { background-color: #f3e8ff; color: #7e22ce; }
+    .badge-ot { background-color: #fee2e2; color: #b91c1c; }
+    .loading {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>ระบบบันทึกกะและคำนวณค่าแรงพาร์ทไทม์</h1>
+    <p>Part-Time Shift & Wage Management System</p>
+  </div>
+
+  <!-- Form Section -->
+  <div class="card">
+    <h2 style="font-size: 18px; margin-bottom: 16px;">บันทึกข้อมูลการเข้ากะ</h2>
+    <form id="shiftForm" onsubmit="handleFormSubmit(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="empId">รหัสพนักงาน</label>
+          <input type="text" id="empId" name="empId" placeholder="เช่น EMP-01" required>
+        </div>
+        <div class="form-group">
+          <label for="empName">ชื่อ-นามสกุล</label>
+          <input type="text" id="empName" name="empName" placeholder="ระบุชื่อพนักงาน" required>
+        </div>
+        <div class="form-group">
+          <label for="shiftDate">วันที่เข้างาน</label>
+          <input type="date" id="shiftDate" name="shiftDate" required>
+        </div>
+        <div class="form-group">
+          <label for="shiftType">ประเภทกะ</label>
+          <select id="shiftType" name="shiftType" required>
+            <option value="Normal">กะปกติ (ค่าแรงปกติ 1.0x)</option>
+            <option value="Night">กะดึก (เพิ่ม 10% 1.1x)</option>
+            <option value="OT">กะล่วงเวลา (OT 1.5x)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="hours">จำนวนชั่วโมงทำงาน</label>
+          <input type="number" id="hours" name="hours" step="0.5" min="1" max="24" placeholder="เช่น 6 หรือ 8" required>
+        </div>
+        <div class="form-group">
+          <label for="rate">อัตราค่าจ้างต่อชั่วโมง (บาท)</label>
+          <input type="number" id="rate" name="rate" step="1" min="0" placeholder="เช่น 50" required>
+        </div>
+      </div>
+      <button type="submit" class="btn" id="submitBtn">คำนวณและบันทึกลงระบบ</button>
+    </form>
+  </div>
+
+  <!-- Recent Records Table -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h2 style="font-size: 18px;">ประวัติการลงกะล่าสุด</h2>
+      <button onclick="loadTableData()" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 13px;">รีเฟรช ⟳</button>
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>วันที่</th>
+            <th>รหัส</th>
+            <th>ชื่อ-นามสกุล</th>
+            <th>กะ</th>
+            <th>ชั่วโมง</th>
+            <th>ค่าแรงสุทธิ (บาท)</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr>
+            <td colspan="6" class="loading">กำลังโหลดข้อมูล...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ตั้งค่าวันที่เริ่มต้นเป็นวันปัจจุบัน
+  document.getElementById('shiftDate').value = new Date().toISOString().split('T')[0];
+
+  // โหลดข้อมูลเมื่อเปิดหน้าเว็บ
+  window.onload = function() {
+    loadTableData();
+  };
+
+  function handleFormSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerText = 'กำลังคำนวณและบันทึกข้อมูล...';
+
+    const formData = {
+      empId: document.getElementById('empId').value,
+      empName: document.getElementById('empName').value,
+      shiftDate: document.getElementById('shiftDate').value,
+      shiftType: document.getElementById('shiftType').value,
+      hours: document.getElementById('hours').value,
+      rate: document.getElementById('rate').value
+    };
+
+    google.script.run
+      .withSuccessHandler(function(response) {
+        btn.disabled = false;
+        btn.innerText = 'คำนวณและบันทึกลงระบบ';
+        if (response.status === 'success') {
+          alert('บันทึกสำเร็จ! ค่าแรงที่คำนวณได้: ' + response.wage.toLocaleString() + ' บาท');
+          document.getElementById('shiftForm').reset();
+          document.getElementById('shiftDate').value = new Date().toISOString().split('T')[0];
+          loadTableData();
+        } else {
+          alert('เกิดข้อผิดพลาด: ' + response.message);
+        }
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.innerText = 'คำนวณและบันทึกลงระบบ';
+        alert('ระบบขัดข้อง: ' + err);
+      })
+      .saveShiftData(formData);
+  }
+
+  function loadTableData() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="loading">กำลังโหลดข้อมูล...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(function(data) {
+        if (!data || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 16px; color:#64748b;">ยังไม่มีข้อมูลการบันทึก</td></tr>';
+          return;
+        }
+
+        let html = '';
+        data.forEach(item => {
+          let badgeClass = 'badge-normal';
+          let badgeText = 'ปกติ';
+          if (item.shiftType === 'Night') {
+            badgeClass = 'badge-night';
+            badgeText = 'กะดึก (+10%)';
+          } else if (item.shiftType === 'OT') {
+            badgeClass = 'badge-ot';
+            badgeText = 'OT (1.5x)';
+          }
+
+          html += `<tr>
+            <td>${item.date}</td>
+            <td>${item.empId}</td>
+            <td>${item.empName}</td>
+            <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+            <td>${item.hours} ชม.</td>
+            <td style="font-weight: 600; color: #16a34a;">${Number(item.wage).toLocaleString()} ฿</td>
+          </tr>`;
+        });
+        tbody.innerHTML = html;
+      })
+      .getRecentShifts();
+  }
+</script>
+
+</body>
+</html>
